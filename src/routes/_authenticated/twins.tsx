@@ -53,7 +53,7 @@ function TwinsPage() {
           {[
             { value: formatCount(stats.data.total), label: "people" },
             { value: stats.data.countries, label: "countries" },
-            { value: stats.data.sameAge, label: "your age" },
+            { value: stats.data.sameAge, label: "Year Twins" },
           ].map((s) => (
             <div key={s.label} className="panel p-4 text-center">
               <p className="font-display text-xl font-semibold">{s.value}</p>

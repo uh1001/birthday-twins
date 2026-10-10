@@ -127,7 +127,7 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
         </div>
       </header>
 
-      <main className={cn("mx-auto w-full max-w-2xl px-4 pb-28 pt-5 lg:max-w-3xl", "lg:ml-64 lg:pb-12 xl:ml-[max(16rem,calc(50%-24rem+8rem))]")}>
+      <main className={cn("mx-auto w-full max-w-2xl px-4 pb-28 pt-5 lg:max-w-3xl", "lg:ml-64 lg:pb-12")}>
         {title && <h1 className="mb-4 font-display text-2xl font-semibold">{title}</h1>}
         {children}
       </main>
