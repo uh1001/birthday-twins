@@ -16,4 +16,5 @@
 - RLS visibility uses cached array helpers (`my_hidden_ids`, `my_private_hidden_ids`) — avoid per-row function calls in policies; they time out on large tables.
 - Community-scoped queries resolve member IDs first (`communityIds`) instead of `profiles!inner` filters, which time out.
 - Uploaded media goes to the private `media` bucket in the user's own folder and is stored as a long-lived signed URL (public buckets are blocked in this workspace).
-- Moderator access comes from `user_roles` via `has_role`/`is_moderator`.
+- Moderator access comes from `user_roles` via `has_role`/`is_moderator`; clients cannot write `user_roles`.
+- Moderator actions go through `moderate_*` security-definer functions that check `is_moderator()` and write `moderation_actions` in the same transaction — so every action is authorized and audited server-side.

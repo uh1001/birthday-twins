@@ -1,98 +1,84 @@
 # 🎂 Birthday Twin
 
-A web app for discovering people who share your birthday and exploring their stories, interests, and everyday experiences.
+A social discovery web app for finding people around the world who share your birthday — and seeing how differently lives unfold from the same starting day.
 
-Birthday Twin focuses on social discovery and community, with optional connections and messaging.
+Birthday Twin is about curiosity and community, not dating. Connections and messaging are optional and controlled by each user.
 
-## 🌐 Live Demo
+## 🌐 Live App
 
-[Try Birthday Twin](YOUR_APP_URL)
+Not published yet. Preview builds are available inside Lovable. This section will link to the live URL once the app is published.
 
-## 📸 Screenshots
+## ✨ Implemented Features
 
-![Birthday Twin homepage](docs/screenshots/home.png)
+- **Birthday Twins & Year Twins** — matching on month + day, and month + day + year (birth year stays private and is matched server-side). Feb 29 birthdays are supported.
+- **Onboarding** — name, username, birthday, optional private birth year, photo upload, city/country, occupation, interests, bio and privacy choices, followed by a "We found your Birthday Twins" reveal.
+- **Home** — greeting, birthday countdown, Birthday Twins, Today's Journey, Daily Birthday Question and community moments.
+- **Birthday Communities** — per-birthday feed, members with country/age/interest filters, daily question answers, events with RSVPs, and challenges.
+- **Moments** — text, photo and short-video posts with city/country, likes, comments, saves and post detail pages.
+- **Explore & World Map** — search, Year Twins, countries and celebrity birthday matches; map shows country-level counts only.
+- **Profiles** — birthday card, Birthday/Year Twin badges, posts, moments, connections; age and location shown only if the user allows it.
+- **Connections & Messaging** — connection requests, direct messages with read indicators, block and report.
+- **Notifications** — connections, messages, comments, reactions, community events and birthday notices, with per-category preferences.
+- **XP & Ranks** — points awarded by the database for meaningful actions, with daily caps.
+- **Shareable Birthday Twin card** and **Yearbook**.
+- **Privacy & safety** — private profiles, messaging permissions, blocks, reports and account deletion.
+- **Moderation** — role-based moderator page (only visible to moderators) to review reported posts, comments and profiles; dismiss/resolve reports or remove content; create, edit and delete community challenges. Every moderator action is logged with moderator, action, time and reason.
 
-## ✨ Features
+## ✅ What Has Been Verified
 
-<!-- Keep only features currently implemented. -->
+- Ordinary accounts are refused by the database when trying moderator actions, reading reports or the moderation log, or granting themselves roles (tested with a temporary account).
+- The owner moderator account can open the moderation page and create/delete a challenge, with both actions appearing in the log.
+- Posting, likes, comments and XP were exercised in the preview during development.
+- Birthday / leap-year and XP helper unit tests (`src/lib/*.test.ts`).
 
-- **Birthday Twins:** Discover people with the same birth month and day.
-- **Year Twins:** Find people born on the exact same date, including year.
-- **Birthday Communities:** Explore shared feeds, photos, videos, and community activity.
-- **Social Feed:** Share updates and interact through likes, comments, and saves.
-- **Today’s Journey:** Document your day through photos, videos, and short updates.
-- **Daily Birthday Question:** Compare experiences with people who share your birthday.
-- **Explore:** Search for people and communities.
-- **Profiles:** Share your interests, posts, and personal story.
-- **Connections and Messaging:** Connect and chat with other users.
-- **Privacy Controls:** Manage the visibility of personal information.
+Other features are implemented but have not each been tested end to end.
+
+## ⚠️ Current Limitations
+
+- Daily questions come from a seeded list; once it runs out, the latest question repeats.
+- Celebrity matches use a small built-in list, structured so an external API can be connected later.
+- Map country outlines are loaded from an external public source.
+- Demo users are fake profiles used to show matching; they cannot sign in.
+- Moderators can't yet suspend accounts; there's no appeal flow.
+- Not yet published to a public URL.
 
 ## 🛠️ Tech Stack
 
-<!-- Verify these against package.json and your backend setup. -->
-
-- React
-- TypeScript
-- Vite
-- Tailwind CSS
-- Supabase
+- React 19 + TypeScript
+- TanStack Start (TanStack Router, server functions) on Vite
+- TanStack Query
+- Tailwind CSS v4 + shadcn/ui (Radix UI)
+- Lovable Cloud (Supabase: Postgres with row-level security, Auth, Storage)
+- Vitest
 
 ## 🚀 Running Locally
 
-Requires Node.js and npm.
+Requires [Bun](https://bun.sh) (the repo has a `bun.lock`) or Node.js with npm.
 
-1. Clone the repository:
+```bash
+git clone https://github.com/uh1001/<repository>.git
+cd <repository>
+bun install        # or: npm install
+bun run dev        # or: npm run dev
+```
 
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git
-   cd YOUR_REPOSITORY
-   ```
+The app reads its backend settings from `.env` (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`), which Lovable manages. These are publishable values; never commit service-role keys or other private credentials.
 
-2. Install dependencies:
+Other scripts: `bun run build`, `bun run lint`, `bunx vitest run`.
 
-   ```bash
-   npm install
-   ```
+Database schema changes live in `drizzle/migrations/` and `supabase/migrations/`.
 
-3. If environment variables are required, create a `.env.local`
-   file using the variable names documented in `.env.example`.
+## 🤖 Development with Lovable
 
-4. Start the development server:
-
-   ```bash
-   npm run dev
-   ```
-
-5. Open the local URL shown in your terminal.
-
-Backend-dependent features require the corresponding backend
-configuration. Never commit private credentials or service-role keys.
+Birthday Twin is built with [Lovable](https://lovable.dev), an AI app builder, and synced to GitHub. Changes made in Lovable are pushed to this repository, and commits pushed here sync back into Lovable. The backend (database, auth, storage) runs on Lovable Cloud.
 
 ## 💡 Why I Built It
 
-I wanted to explore how sharing a birthday could become a starting
-point for discovering people and their experiences. Birthday Twin
-combines that idea with storytelling and community participation.
-
-## 🤖 Development
-
-Built with assistance from Lovable and synced with GitHub for version
-control. This repository documents the project’s implementation and
-ongoing development.
-
-## 🔮 Planned Features
-
-<!-- Remove anything already implemented or no longer planned. -->
-
-- World map of birthday twins
-- Community challenges, XP, ranks, and badges
-- Celebrity birthday matches
-- Shareable birthday cards
-- Community events and yearbook recaps
+I wanted to explore how sharing a birthday could become a starting point for discovering people and their experiences.
 
 ## 👤 Creator
 
 **Usman Haider**
 
 - GitHub: [uh1001](https://github.com/uh1001)
-- LinkedIn: [Usman Haider]((https://www.linkedin.com/in/usman-haider-1088bb37b/)
+- LinkedIn: [Usman Haider](https://www.linkedin.com/in/usman-haider-1088bb37b/)

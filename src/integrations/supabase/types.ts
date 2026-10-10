@@ -418,6 +418,57 @@ export type Database = {
           },
         ]
       }
+      moderation_actions: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          moderator_profile_id: string | null
+          moderator_user_id: string
+          reason: string
+          report_id: string | null
+          target_id: string | null
+          target_type: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          moderator_profile_id?: string | null
+          moderator_user_id: string
+          reason: string
+          report_id?: string | null
+          target_id?: string | null
+          target_type: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          moderator_profile_id?: string | null
+          moderator_user_id?: string
+          reason?: string
+          report_id?: string | null
+          target_id?: string | null
+          target_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_actions_moderator_profile_id_fkey"
+            columns: ["moderator_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_actions_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       moments: {
         Row: {
           body: string
@@ -828,6 +879,40 @@ export type Database = {
       }
       is_blocked_pair: { Args: { a: string; b: string }; Returns: boolean }
       is_moderator: { Args: never; Returns: boolean }
+      log_mod_action: {
+        Args: {
+          p_action: string
+          p_reason: string
+          p_report: string
+          p_target: string
+          p_type: string
+        }
+        Returns: undefined
+      }
+      moderate_delete_challenge: {
+        Args: { p_id: string; p_reason: string }
+        Returns: undefined
+      }
+      moderate_remove_content: {
+        Args: { p_id: string; p_reason: string; p_type: string }
+        Returns: undefined
+      }
+      moderate_report: {
+        Args: { p_action: string; p_reason: string; p_report: string }
+        Returns: undefined
+      }
+      moderate_save_challenge: {
+        Args: {
+          p_description: string
+          p_ends: string
+          p_id: string
+          p_reason: string
+          p_starts: string
+          p_title: string
+          p_xp: number
+        }
+        Returns: string
+      }
       my_hidden_ids: { Args: never; Returns: string[] }
       my_pid: { Args: never; Returns: string }
       my_private_hidden_ids: { Args: never; Returns: string[] }

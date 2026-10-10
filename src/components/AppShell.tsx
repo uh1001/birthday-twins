@@ -122,6 +122,9 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-background/85 px-4 py-3 backdrop-blur-xl lg:hidden">
         <Logo compact={false} />
         <div className="flex items-center gap-2">
+          {profile?.isModerator && (
+            <Link to="/moderation" aria-label="Moderation" className="grid size-9 place-items-center rounded-full border border-border"><Shield className="size-4" /></Link>
+          )}
           <IconLink to="/messages" label="Messages" n={unread.messages}><MessageCircle className="size-4" /></IconLink>
           <IconLink to="/notifications" label="Notifications" n={unread.notifications}><Bell className="size-4" /></IconLink>
         </div>
