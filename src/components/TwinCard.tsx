@@ -3,7 +3,7 @@ import type { Profile } from "@/lib/api";
 import { ageFrom, flagFor } from "@/lib/birthday";
 import { Badge } from "@/components/ui/badge";
 
-export function TwinCard({ profile, me }: { profile: Profile; me?: Profile | null }) {
+export function TwinCard({ profile, me }: { profile: Profile; me?: Profile | null | undefined }) {
   const age = profile.show_age ? ageFrom(profile.birth_year, profile.birth_month, profile.birth_day) : null;
   const yearTwin = !!me?.birth_year && me.birth_year === profile.birth_year;
 

@@ -60,7 +60,7 @@ function CommunityPage() {
       if (country !== "all" && p.country !== country) return false;
       const a = ageFrom(p.birth_year, p.birth_month, p.birth_day);
       if (age !== "all" && a !== null) {
-        const [lo, hi] = age.split("-").map(Number);
+        const [lo = 0, hi = 200] = age.split("-").map(Number);
         if (a < lo || a > hi) return false;
       }
       if (interest && !p.interests.some((i) => i.toLowerCase().includes(interest.toLowerCase()))) return false;
@@ -71,7 +71,7 @@ function CommunityPage() {
   async function post() {
     if (!me) return;
     const text = body.trim();
-    if (!text || text.length > 500) return toast.error("Write 1–500 characters");
+    if (!text || text.length > 500) { toast.error("Write 1–500 characters"); return; }
     const { error } = await supabase.from("moments").insert({
       profile_id: me.id,
       body: text,
@@ -79,7 +79,7 @@ function CommunityPage() {
       city: me.city,
       country: me.country,
     });
-    if (error) return toast.error("Couldn't post your Moment");
+    if (error) { toast.error("Couldn't post your Moment"); return; }
     await awardXp(me, 15);
     setBody("");
     setImageUrl("");
@@ -90,9 +90,9 @@ function CommunityPage() {
   async function submitAnswer() {
     if (!me || !question.data) return;
     const text = answer.trim();
-    if (!text || text.length > 500) return toast.error("Write 1–500 characters");
+    if (!text || text.length > 500) { toast.error("Write 1–500 characters"); return; }
     const { error } = await supabase.from("answers").insert({ question_id: question.data.id, profile_id: me.id, body: text });
-    if (error) return toast.error(error.message.includes("duplicate") ? "You already answered today" : "Couldn't save answer");
+    if (error) { toast.error(error.message.includes("duplicate") ? "You already answered today" : "Couldn't save answer"); return; }
     await awardXp(me, 20);
     setAnswer("");
     toast.success("Answer shared · +20 XP");

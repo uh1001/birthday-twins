@@ -8,7 +8,7 @@ import { fetchMoments, xpRank, type Profile } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import { ageFrom, flagFor } from "@/lib/birthday";
 
-export function ProfileView({ profile, me, actions }: { profile: Profile; me?: Profile | null; actions?: ReactNode }) {
+export function ProfileView({ profile, me, actions }: { profile: Profile; me?: Profile | null | undefined; actions?: ReactNode }) {
   const moments = useQuery({ queryKey: ["moments", profile.id], queryFn: () => fetchMoments(profile.id) });
   const connections = useQuery({
     queryKey: ["connection-count", profile.id],
