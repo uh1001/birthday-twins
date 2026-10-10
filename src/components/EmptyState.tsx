@@ -6,10 +6,10 @@ export function EmptyState({
   description,
   action,
 }: {
-  emoji?: string;
+  emoji?: string | undefined;
   title: string;
   description: string;
-  action?: ReactNode;
+  action?: ReactNode | undefined;
 }) {
   return (
     <div className="panel flex flex-col items-center px-6 py-12 text-center">
