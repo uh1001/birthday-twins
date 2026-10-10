@@ -21,13 +21,13 @@ export function xpRank(xp: number) {
 export type Badge = { id: string; emoji: string; name: string; description: string };
 
 const BADGES: (Badge & { test: (c: Record<string, number>) => boolean })[] = [
-  { id: "hello", emoji: "👋", name: "Hello, twins", description: "Completed your profile", test: (c) => (c.profile_complete ?? 0) >= 1 },
-  { id: "storyteller", emoji: "📸", name: "Storyteller", description: "Shared 5 posts or Moments", test: (c) => (c.share ?? 0) >= 5 },
-  { id: "curious", emoji: "💬", name: "Curious mind", description: "Answered 3 daily questions", test: (c) => (c.answer ?? 0) >= 3 },
-  { id: "challenger", emoji: "🏅", name: "Challenger", description: "Joined a community challenge", test: (c) => (c.challenge ?? 0) >= 1 },
-  { id: "connector", emoji: "🤝", name: "Connector", description: "Made 3 connections", test: (c) => (c.connect ?? 0) >= 3 },
-  { id: "host", emoji: "🎈", name: "Host", description: "Hosted a community event", test: (c) => (c.event ?? 0) >= 1 },
-  { id: "supporter", emoji: "🧡", name: "Supporter", description: "Left 10 comments for others", test: (c) => (c.comment ?? 0) >= 10 },
+  { id: "hello", emoji: "👋", name: "Hello, twins", description: "Completed your profile", test: (c) => (c["profile_complete"] ?? 0) >= 1 },
+  { id: "storyteller", emoji: "📸", name: "Storyteller", description: "Shared 5 posts or Moments", test: (c) => (c["share"] ?? 0) >= 5 },
+  { id: "curious", emoji: "💬", name: "Curious mind", description: "Answered 3 daily questions", test: (c) => (c["answer"] ?? 0) >= 3 },
+  { id: "challenger", emoji: "🏅", name: "Challenger", description: "Joined a community challenge", test: (c) => (c["challenge"] ?? 0) >= 1 },
+  { id: "connector", emoji: "🤝", name: "Connector", description: "Made 3 connections", test: (c) => (c["connect"] ?? 0) >= 3 },
+  { id: "host", emoji: "🎈", name: "Host", description: "Hosted a community event", test: (c) => (c["event"] ?? 0) >= 1 },
+  { id: "supporter", emoji: "🧡", name: "Supporter", description: "Left 10 comments for others", test: (c) => (c["comment"] ?? 0) >= 10 },
 ];
 
 export function countByAction(events: Pick<XpEvent, "action">[]) {

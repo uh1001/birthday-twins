@@ -828,6 +828,9 @@ export type Database = {
       }
       is_blocked_pair: { Args: { a: string; b: string }; Returns: boolean }
       is_moderator: { Args: never; Returns: boolean }
+      my_hidden_ids: { Args: never; Returns: string[] }
+      my_pid: { Args: never; Returns: string }
+      my_private_hidden_ids: { Args: never; Returns: string[] }
       notify: {
         Args: {
           p_actor: string
@@ -840,6 +843,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      viewer_blocked_from: { Args: { target: string }; Returns: boolean }
       year_twin_ids: { Args: never; Returns: string[] }
     }
     Enums: {

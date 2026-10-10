@@ -9,12 +9,7 @@ import { TwinCard } from "@/components/TwinCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMyProfile } from "@/hooks/useMyProfile";
-import {
-  fetchCommunityMoments,
-  fetchTodaysQuestion,
-  fetchTwinStats,
-  fetchTwins,
-} from "@/lib/api";
+import { fetchCommunityJourneys, fetchFeed, fetchTodaysQuestion, fetchTwinStats, fetchTwins } from "@/lib/api";
 import { daysUntilBirthday, flagFor, formatCount, greeting, monthDayLabel } from "@/lib/birthday";
 
 export const Route = createFileRoute("/_authenticated/home")({
@@ -43,14 +38,19 @@ function HomePage() {
     enabled: !!me,
   });
   const moments = useQuery({
-    queryKey: ["community-moments", me?.id],
-    queryFn: () => fetchCommunityMoments(me!, 10),
+    queryKey: ["feed", "home", me?.id],
+    queryFn: () => fetchFeed({ month: me!.birth_month, day: me!.birth_day, kind: "notJourney", limit: 15 }, me!.id),
     enabled: !!me,
   });
   const question = useQuery({ queryKey: ["daily-question"], queryFn: fetchTodaysQuestion });
 
   const days = me ? daysUntilBirthday(me.birth_month, me.birth_day) : null;
-  const journey = (twins.data ?? []).slice(0, 4);
+  const journeys = useQuery({
+    queryKey: ["journeys", me?.birth_month, me?.birth_day],
+    queryFn: () => fetchCommunityJourneys(me!.birth_month!, me!.birth_day!, 5),
+    enabled: !!me?.birth_month && !!me?.birth_day,
+  });
+  const journey = journeys.data ?? [];
 
   return (
     <AppShell>
@@ -106,7 +106,7 @@ function HomePage() {
         )}
       </Section>
 
-      <Section title="Today's Journey">
+      <Section title="Today's Journey" action={<Link to="/create" search={{ kind: "journey" }} className="text-xs font-medium text-primary">Add yours</Link>}>
         <div className="panel divide-y divide-border">
           <div className="p-4">
             <p className="text-sm font-medium">Your Birthday Twins today</p>
@@ -115,7 +115,7 @@ function HomePage() {
             </p>
           </div>
           {journey.length ? (
-            journey.map((t) => (
+            journey.map(({ profile: t, count, preview }) => (
               <Link
                 key={t.id}
                 to="/u/$username"
@@ -125,10 +125,10 @@ function HomePage() {
                 <img src={t.avatar_url ?? ""} alt="" className="size-10 rounded-full object-cover" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">
-                    {t.occupation} in {t.city}
+                    {t.occupation ?? "A twin"}{t.city ? ` in ${t.city}` : ""}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {flagFor(t.country_code)} {t.country} · {t.first_name}
+                    {flagFor(t.country_code)} {t.first_name} · {count} entries · “{preview.slice(0, 50)}”
                   </p>
                 </div>
                 <ArrowRight className="size-4 text-muted-foreground" />
@@ -136,7 +136,8 @@ function HomePage() {
             ))
           ) : (
             <p className="p-4 text-sm text-muted-foreground">
-              Stories from your twins will appear here.
+              Stories from your twins will appear here.{" "}
+              <Link to="/create" search={{ kind: "journey" }} className="text-primary">Start your own Journey →</Link>
             </p>
           )}
         </div>
@@ -148,7 +149,7 @@ function HomePage() {
           <p className="mt-2 font-display text-lg font-semibold leading-snug">
             {question.data?.question ?? "Loading today's question…"}
           </p>
-          <Link to="/community" className="mt-4 block">
+          <Link to="/community" search={{ tab: "question" }} className="mt-4 block">
             <Button className="w-full rounded-full">Answer with your twins</Button>
           </Link>
         </div>
@@ -167,6 +168,7 @@ function HomePage() {
         ) : moments.data?.length ? (
           <div className="space-y-3">
             {moments.data.map((m) => <MomentCard key={m.id} moment={m} me={me} />)}
+            <Link to="/community" className="block text-center text-sm font-medium text-primary">See more in your community →</Link>
           </div>
         ) : (
           <EmptyState
@@ -174,7 +176,7 @@ function HomePage() {
             title="No Moments yet."
             description="Your Birthday Twins are probably doing something interesting right now. Be the first to share yours."
             action={
-              <Link to="/community">
+              <Link to="/create">
                 <Button className="rounded-full">Share a Moment</Button>
               </Link>
             }

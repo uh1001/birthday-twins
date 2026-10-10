@@ -11,11 +11,14 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyProfile } from "@/hooks/useMyProfile";
-import { MONTHS } from "@/lib/birthday";
+import { daysInMonthForBirthday, MONTHS } from "@/lib/birthday";
+import { COUNTRIES } from "@/lib/countries";
+import { uploadMedia } from "@/lib/media";
 import { notifySelf } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
+  validateSearch: z.object({ edit: z.boolean().optional() }),
   head: () => ({
     meta: [
       { title: "Set up your profile — Birthday Twin" },
@@ -64,6 +67,7 @@ const schema = z.object({
 
 function Onboarding() {
   const navigate = useNavigate();
+  const { edit } = Route.useSearch();
   const qc = useQueryClient();
   const { data: profile, isLoading } = useMyProfile();
   const today = new Date();
@@ -73,7 +77,10 @@ function Onboarding() {
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [day, setDay] = useState(today.getDate());
   const [year, setYear] = useState<string>("");
-  const [showAge, setShowAge] = useState(true);
+  const [showAge, setShowAge] = useState(false);
+  const [showYear, setShowYear] = useState(false);
+  const [showLocation, setShowLocation] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [avatar, setAvatar] = useState(AVATARS[0]);
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
@@ -83,8 +90,38 @@ function Onboarding() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (profile?.onboarded) navigate({ to: "/home" });
-  }, [profile, navigate]);
+    if (profile?.onboarded && !edit) navigate({ to: "/home" });
+    if (profile) {
+      setFirstName(profile.first_name);
+      setUsername(profile.username);
+      if (profile.birth_month) setMonth(profile.birth_month);
+      if (profile.birth_day) setDay(profile.birth_day);
+      setYear(profile.birth_year ? String(profile.birth_year) : "");
+      setShowAge(profile.show_age);
+      setShowYear(profile.show_birth_year);
+      setShowLocation(profile.show_location);
+      if (profile.avatar_url) setAvatar(profile.avatar_url);
+      setCity(profile.city ?? "");
+      setCountry(profile.country ?? "");
+      setOccupation(profile.occupation ?? "");
+      setBio(profile.bio ?? "");
+      setInterests(profile.interests);
+    }
+  }, [profile, navigate, edit]);
+
+  async function onPhoto(f?: File) {
+    if (!f) return;
+    if (!f.type.startsWith("image/")) return void toast.error("Choose an image file");
+    setUploading(true);
+    try {
+      const up = await uploadMedia(f);
+      setAvatar(up.url);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   function toggleInterest(i: string) {
     setInterests((prev) => (prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]));
@@ -104,6 +141,15 @@ function Onboarding() {
       toast.error(parsed.error.issues[0]?.message ?? "Check your details");
       return;
     }
+    const y = year ? Number(year) : null;
+    if (y !== null && (y < 1900 || y > new Date().getFullYear())) {
+      toast.error("Enter a valid birth year");
+      return;
+    }
+    if (day > daysInMonthForBirthday(month)) {
+      toast.error("That date doesn't exist");
+      return;
+    }
     setBusy(true);
     try {
       const { data: auth } = await supabase.auth.getUser();
@@ -115,16 +161,18 @@ function Onboarding() {
         username: parsed.data.username,
         birth_month: month,
         birth_day: day,
-        birth_year: year ? Number(year) : null,
+        birth_year: y,
         show_age: showAge,
+        show_birth_year: showYear,
+        show_location: showLocation,
         avatar_url: avatar ?? null,
         city: parsed.data.city || null,
         country: parsed.data.country || null,
+        country_code: COUNTRIES.find((c) => c.name === parsed.data.country)?.code ?? null,
         occupation: parsed.data.occupation || null,
         bio: parsed.data.bio || null,
         interests,
         onboarded: true,
-        xp: 60,
       };
 
       const { data: saved, error } = profile
@@ -137,14 +185,22 @@ function Onboarding() {
         );
       }
 
-      await notifySelf(
-        saved.id,
-        "twins",
-        "We found your Birthday Twins 🎂",
-        `People born on ${MONTHS[month - 1]} ${day} are waiting for you.`,
-      );
+      // Private values are stored separately; this also lets people clear them.
+      await supabase.from("profile_private").upsert({
+        profile_id: saved.id,
+        birth_year: y,
+        city: parsed.data.city || null,
+        country: parsed.data.country || null,
+        country_code: COUNTRIES.find((c) => c.name === parsed.data.country)?.code ?? null,
+      });
+      if (!profile?.onboarded) {
+        await notifySelf(saved.id, "twins", "We found your Birthday Twins 🎂", `People born on ${MONTHS[month - 1]} ${day} are waiting for you.`, "/twins");
+      }
       await qc.invalidateQueries();
-      navigate({ to: "/twins" });
+      if (profile?.onboarded) {
+        toast.success("Profile updated");
+        navigate({ to: "/me" });
+      } else navigate({ to: "/twins" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't save your profile");
     } finally {
@@ -161,11 +217,17 @@ function Onboarding() {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 gradient-glow" />
       <div className="relative mx-auto max-w-lg">
         <Logo />
-        <h1 className="mt-6 font-display text-2xl font-semibold">Tell us who you are</h1>
+        <h1 className="mt-6 font-display text-2xl font-semibold">{profile?.onboarded ? "Edit your profile" : "Tell us who you are"}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Your birthday is all we need to find your twins. Everything else helps them get to know
           you.
         </p>
+        <div className="panel mt-4 space-y-2 p-4 text-sm">
+          <p className="font-semibold">How birthday matching works</p>
+          <p className="text-muted-foreground"><span className="font-medium text-foreground">🎂 Birthday Twins</span> share your birth month and day, whatever year they were born.</p>
+          <p className="text-muted-foreground"><span className="font-medium text-foreground">✨ Year Twins</span> share your complete date of birth. We match years privately — your year is never shown unless you choose.</p>
+          <p className="text-muted-foreground">Born on February 29? You match other leap-day twins, and we celebrate on Feb 28 in non-leap years.</p>
+        </div>
 
         <form onSubmit={save} className="mt-6 flex flex-col gap-5">
           <div className="panel space-y-4 p-5">
@@ -214,7 +276,7 @@ function Onboarding() {
                   onChange={(e) => setDay(Number(e.target.value))}
                   className="h-11 w-24 rounded-xl border border-input bg-background px-3 text-sm"
                 >
-                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                  {Array.from({ length: daysInMonthForBirthday(month) }, (_, i) => i + 1).map((d) => (
                     <option key={d} value={d}>
                       {d}
                     </option>
@@ -237,6 +299,10 @@ function Onboarding() {
                 <span className="text-sm">Show my age on my profile</span>
                 <Switch checked={showAge} onCheckedChange={setShowAge} />
               </div>
+              <div className="flex items-center justify-between rounded-xl bg-surface px-3 py-2.5">
+                <span className="text-sm">Show my birth year</span>
+                <Switch checked={showYear} onCheckedChange={setShowYear} />
+              </div>
             </div>
           </div>
 
@@ -258,12 +324,11 @@ function Onboarding() {
                   </button>
                 ))}
               </div>
-              <Input
-                value={avatar ?? ""}
-                onChange={(e) => setAvatar(e.target.value)}
-                placeholder="…or paste an image link"
-                className="h-11 rounded-xl"
-              />
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-border p-3 text-sm">
+                {avatar && <img src={avatar} alt="" className="size-10 rounded-xl object-cover" />}
+                <span>{uploading ? "Uploading…" : "Upload your own photo (JPG, PNG, WebP, up to 8 MB)"}</span>
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(e) => onPhoto(e.target.files?.[0])} />
+              </label>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -279,14 +344,21 @@ function Onboarding() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="country">Country</Label>
-                <Input
+                <select
                   id="country"
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="h-11 rounded-xl"
-                  maxLength={60}
-                />
+                  className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                >
+                  <option value="">Prefer not to say</option>
+                  {COUNTRIES.map((c) => <option key={c.code} value={c.name}>{c.name}</option>)}
+                </select>
               </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl bg-surface px-3 py-2.5">
+              <span className="text-sm">Show my city and country (optional)</span>
+              <Switch checked={showLocation} onCheckedChange={setShowLocation} />
             </div>
 
             <div className="space-y-1.5">
@@ -336,7 +408,7 @@ function Onboarding() {
           </div>
 
           <Button type="submit" disabled={busy} className="h-12 rounded-full text-base">
-            {busy ? "Finding your twins…" : "Find my Birthday Twins 🎂"}
+            {busy ? "Saving…" : profile?.onboarded ? "Save changes" : "Find my Birthday Twins 🎂"}
           </Button>
         </form>
       </div>

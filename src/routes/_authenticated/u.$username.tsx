@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Flag, MessageCircle, MoreHorizontal, ShieldOff, UserCheck, UserPlus } from "lucide-react";
+import { Clock, Flag, MessageCircle, MoreHorizontal, ShieldOff, UserCheck, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
@@ -10,7 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyProfile } from "@/hooks/useMyProfile";
-import { awardXp, fetchConnections, fetchProfileByUsername, notifySelf } from "@/lib/api";
+import { fetchConnectionState, fetchProfileByUsername, reportContent } from "@/lib/api";
 
 export const Route = createFileRoute("/_authenticated/u/$username")({
   head: () => ({
@@ -30,30 +30,42 @@ function UserPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const profile = useQuery({ queryKey: ["profile", username], queryFn: () => fetchProfileByUsername(username) });
-  const following = useQuery({ queryKey: ["following", me?.id], queryFn: () => fetchConnections(me!.id), enabled: !!me });
   const p = profile.data;
-  const connected = !!p && !!following.data?.includes(p.id);
+  const conn = useQuery({ queryKey: ["conn-state", me?.id, p?.id], queryFn: () => fetchConnectionState(me!.id, p!.id), enabled: !!me && !!p && me.id !== p.id });
+  const canMsg = useQuery({
+    queryKey: ["can-message", p?.id],
+    enabled: !!p && !!me && me.id !== p.id,
+    queryFn: async () => (await supabase.rpc("can_message", { target: p!.id })).data ?? false,
+  });
+  const state = conn.data?.state ?? "none";
+  const canView = !p?.is_private || state === "connected" || me?.id === p?.id;
 
-  async function toggleConnect() {
+  async function connectAction() {
     if (!me || !p) return;
-    if (connected) {
-      await supabase.from("connections").delete().eq("follower_id", me.id).eq("following_id", p.id);
-      toast("Connection removed");
+    let error;
+    if (state === "none") {
+      ({ error } = await supabase.from("connections").insert({ follower_id: me.id, following_id: p.id }));
+      if (!error) toast.success(`Request sent to ${p.first_name}`);
+    } else if (state === "incoming") {
+      ({ error } = await supabase.from("connections").update({ status: "accepted" }).eq("id", conn.data!.id!));
+      if (!error) toast.success(`Connected with ${p.first_name} · +10 XP`);
     } else {
-      const { error } = await supabase.from("connections").insert({ follower_id: me.id, following_id: p.id });
-      if (error) { toast.error("Couldn't connect"); return; }
-      await awardXp(me, 10);
-      await notifySelf(me.id, "connection", `You connected with ${p.first_name}`, "Say hello and ask about their day.", p.id);
-      toast.success(`Connected with ${p.first_name} · +10 XP`);
+      if (state === "connected" && !window.confirm(`Remove your connection with ${p.first_name}?`)) return;
+      ({ error } = await supabase.from("connections").delete().eq("id", conn.data!.id!));
+      if (!error) toast(state === "connected" ? "Connection removed" : "Request cancelled");
     }
+    if (error) toast.error("Something went wrong");
     qc.invalidateQueries();
   }
 
   async function block() {
     if (!me || !p) return;
-    await supabase.from("blocks").insert({ blocker_id: me.id, blocked_id: p.id });
-    await supabase.from("connections").delete().eq("follower_id", me.id).eq("following_id", p.id);
+    if (!window.confirm(`Block ${p.first_name}? You won't see each other or be able to message.`)) return;
+    if (conn.data?.id) await supabase.from("connections").delete().eq("id", conn.data.id);
+    const { error } = await supabase.from("blocks").insert({ blocker_id: me.id, blocked_id: p.id });
+    if (error) return void toast.error("Couldn't block");
     toast(`${p.first_name} is blocked`);
+    qc.invalidateQueries();
     navigate({ to: "/home" });
   }
 
@@ -61,31 +73,37 @@ function UserPage() {
     if (!me || !p) return;
     const reason = window.prompt("Tell us briefly what's wrong")?.trim();
     if (!reason) return;
-    await supabase.from("reports").insert({ reporter_id: me.id, reported_id: p.id, reason: reason.slice(0, 500) });
-    toast.success("Thanks — our team will review this");
+    const { error } = await reportContent({ reporterId: me.id, reportedId: p.id, reason });
+    if (error) return void toast.error("Couldn't send report");
+    toast.success("Thanks — a moderator will review this");
   }
+
+  const label = { none: <><UserPlus className="size-4" /> Connect</>, outgoing: <><Clock className="size-4" /> Requested</>, incoming: <><UserCheck className="size-4" /> Accept request</>, connected: <><UserCheck className="size-4" /> Connected</> }[state];
 
   return (
     <AppShell>
       {profile.isLoading && <Skeleton className="h-96 rounded-3xl" />}
-      {profile.data === null && <EmptyState emoji="🔎" title="Profile not found" description="This person may have left Birthday Twin." />}
+      {profile.data === null && <EmptyState emoji="🔎" title="Profile not found" description="This person may have left Birthday Twin, or isn't available." />}
       {p && (
         <ProfileView
           profile={p}
           me={me}
+          canView={canView}
           actions={
             me?.id === p.id ? (
               <Link to="/me"><Button className="rounded-full">Edit profile</Button></Link>
             ) : (
               <>
-                <Button onClick={toggleConnect} variant={connected ? "outline" : "default"} className="rounded-full">
-                  {connected ? <><UserCheck className="size-4" /> Connected</> : <><UserPlus className="size-4" /> Connect</>}
-                </Button>
-                <Link to="/messages/$id" params={{ id: p.id }}>
-                  <Button variant="outline" className="rounded-full" disabled={!p.allow_messages}><MessageCircle className="size-4" /> Message</Button>
-                </Link>
+                <Button onClick={connectAction} variant={state === "connected" || state === "outgoing" ? "outline" : "default"} className="rounded-full">{label}</Button>
+                {canMsg.data ? (
+                  <Link to="/messages/$id" params={{ id: p.id }}>
+                    <Button variant="outline" className="rounded-full"><MessageCircle className="size-4" /> Message</Button>
+                  </Link>
+                ) : (
+                  <Button variant="outline" className="rounded-full" disabled title="This person limits who can message them"><MessageCircle className="size-4" /> Messages off</Button>
+                )}
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild><Button variant="outline" size="icon" className="rounded-full"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
+                  <DropdownMenuTrigger asChild><Button variant="outline" size="icon" className="rounded-full" aria-label="More"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={block}><ShieldOff className="size-4" /> Block</DropdownMenuItem>
                     <DropdownMenuItem onClick={report}><Flag className="size-4" /> Report</DropdownMenuItem>

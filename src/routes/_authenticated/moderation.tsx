@@ -41,13 +41,13 @@ function ModerationPage() {
 
   async function resolve(id: string, status: "resolved" | "dismissed") {
     const { error } = await supabase.from("reports").update({ status, resolved_at: new Date().toISOString() }).eq("id", id);
-    if (error) return toast.error("Couldn't update report");
+    if (error) return void toast.error("Couldn't update report");
     qc.invalidateQueries({ queryKey: ["reports"] });
   }
   async function removePost(reportId: string, momentId: string) {
     if (!window.confirm("Remove this post for everyone?")) return;
     const { error } = await supabase.from("moments").delete().eq("id", momentId);
-    if (error) return toast.error("Couldn't remove post");
+    if (error) return void toast.error("Couldn't remove post");
     toast.success("Post removed");
     await resolve(reportId, "resolved");
   }

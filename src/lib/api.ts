@@ -92,7 +92,16 @@ export async function fetchTwinStats(me: Profile): Promise<TwinStats> {
   return { ...base, total: Math.max(base.total - 1, 0), sameAge: yearIds.length };
 }
 
-const FEED_SELECT = "*, profiles!inner(*), likes(count), comments(count)";
+const FEED_SELECT = "*, profiles(*), likes(count), comments(count)";
+
+/** Profile IDs in a birthday community (fast two-step filter instead of a joined filter). */
+export async function communityIds(month: number, day: number, extra?: { yearbook?: boolean }) {
+  let q = supabase.from("profiles").select("id").eq("birth_month", month).eq("birth_day", day).limit(2000);
+  if (extra?.yearbook) q = q.eq("show_in_yearbook", true);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []).map((r) => r.id);
+}
 
 type RawFeed = Tables<"moments"> & {
   profiles: Profile;
@@ -122,18 +131,22 @@ async function enrich(rows: RawFeed[], meId?: string): Promise<FeedItem[]> {
 }
 
 export type FeedFilter = {
-  month?: number | null;
-  day?: number | null;
-  profileId?: string;
-  kind?: "moment" | "post" | "journey" | "notJourney";
-  media?: "image" | "video" | "any";
-  search?: string;
-  limit?: number;
+  month?: number | null | undefined;
+  day?: number | null | undefined;
+  profileId?: string | undefined;
+  kind?: "moment" | "post" | "journey" | "notJourney" | undefined;
+  media?: "image" | "video" | "any" | undefined;
+  search?: string | undefined;
+  limit?: number | undefined;
 };
 
 export async function fetchFeed(f: FeedFilter, meId?: string): Promise<FeedItem[]> {
   let q = supabase.from("moments").select(FEED_SELECT).order("created_at", { ascending: false }).limit(f.limit ?? 30);
-  if (f.month && f.day) q = q.eq("profiles.birth_month", f.month).eq("profiles.birth_day", f.day);
+  if (f.month && f.day) {
+    const ids = await communityIds(f.month, f.day);
+    if (!ids.length) return [];
+    q = q.in("profile_id", ids);
+  }
   if (f.profileId) q = q.eq("profile_id", f.profileId);
   if (f.kind === "notJourney") q = q.neq("kind", "journey");
   else if (f.kind) q = q.eq("kind", f.kind);
@@ -173,7 +186,7 @@ export async function fetchJourney(profileId: string) {
   if (error) throw error;
   const rows = (data ?? []) as Moment[];
   if (!rows.length) return { day: null as string | null, entries: [] as Moment[] };
-  const day = new Date(rows[0].created_at).toDateString();
+  const day = new Date(rows[0]!.created_at).toDateString();
   return { day, entries: rows.filter((r) => new Date(r.created_at).toDateString() === day).reverse() };
 }
 
@@ -181,10 +194,9 @@ export async function fetchJourney(profileId: string) {
 export async function fetchCommunityJourneys(month: number, day: number, limit = 6) {
   const { data, error } = await supabase
     .from("moments")
-    .select("profile_id, created_at, body, profiles!inner(*)")
+    .select("profile_id, created_at, body, profiles(*)")
     .eq("kind", "journey")
-    .eq("profiles.birth_month", month)
-    .eq("profiles.birth_day", day)
+    .in("profile_id", await communityIds(month, day))
     .order("created_at", { ascending: false })
     .limit(200);
   if (error) throw error;
@@ -236,11 +248,11 @@ export async function fetchTodaysQuestion() {
 export async function fetchAnswers(questionId: string, month?: number | null, day?: number | null) {
   let q = supabase
     .from("answers")
-    .select("*, profiles!inner(*)")
+    .select("*, profiles(*)")
     .eq("question_id", questionId)
     .order("created_at", { ascending: false })
     .limit(60);
-  if (month && day) q = q.eq("profiles.birth_month", month).eq("profiles.birth_day", day);
+  if (month && day) q = q.in("profile_id", await communityIds(month, day));
   const { data, error } = await q;
   if (error) throw error;
   return (data ?? []) as unknown as Answer[];

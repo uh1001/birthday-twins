@@ -46,22 +46,43 @@ function Thread() {
     },
   });
 
+  const canMsg = useQuery({
+    queryKey: ["can-message", id],
+    queryFn: async () => (await supabase.rpc("can_message", { target: id })).data ?? false,
+  });
+
+  useEffect(() => {
+    if (!me) return;
+    const ch = supabase
+      .channel(`thread-${me.id}-${id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, (payload) => {
+        const m = (payload.new ?? payload.old) as { sender_id?: string; recipient_id?: string };
+        if ((m.sender_id === id && m.recipient_id === me.id) || (m.sender_id === me.id && m.recipient_id === id)) {
+          qc.invalidateQueries({ queryKey: ["thread", me.id, id] });
+        }
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [me, id, qc]);
+
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: "smooth" });
     if (me && messages.data?.some((m) => m.recipient_id === me.id && !m.read_at)) {
-      supabase.from("messages").update({ read_at: new Date().toISOString() }).eq("recipient_id", me.id).eq("sender_id", id).is("read_at", null).then(() => {});
+      supabase.from("messages").update({ read_at: new Date().toISOString() }).eq("recipient_id", me.id).eq("sender_id", id).is("read_at", null).then(() => qc.invalidateQueries({ queryKey: ["unread-messages"] }));
     }
-  }, [messages.data, me, id]);
+  }, [messages.data, me, id, qc]);
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
     const body = text.trim();
     if (!me || !body) return;
     if (body.length > 1000) { toast.error("Message is too long"); return; }
-    if (partner.data && !partner.data.allow_messages) { toast.error(`${partner.data.first_name} isn't accepting messages`); return; }
+    if (!canMsg.data) { toast.error(`${partner.data?.first_name ?? "This person"} isn't accepting messages from you`); return; }
     setText("");
     const { error } = await supabase.from("messages").insert({ sender_id: me.id, recipient_id: id, body });
-    if (error) toast.error("Message didn't send");
+    if (error) { setText(body); toast.error("Message didn't send — they may have limited who can message them"); }
     qc.invalidateQueries({ queryKey: ["thread", me.id, id] });
   }
 
@@ -103,6 +124,9 @@ function Thread() {
           <div ref={bottom} />
         </div>
 
+        {canMsg.data === false && (
+          <p className="mb-2 rounded-2xl bg-surface p-3 text-center text-xs text-muted-foreground">You can't send messages to this person right now. They may only accept messages from connections.</p>
+        )}
         <form onSubmit={send} className="sticky bottom-20 flex gap-2 lg:bottom-4">
           <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Write a message…" maxLength={1000} className="h-12 rounded-full bg-card" />
           <Button type="submit" size="icon" className="size-12 shrink-0 rounded-full"><Send className="size-4" /></Button>

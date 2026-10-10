@@ -33,13 +33,13 @@ function ConnectionsPage() {
 
   async function accept(id: string) {
     const { error } = await supabase.from("connections").update({ status: "accepted" }).eq("id", id);
-    if (error) return toast.error("Couldn't accept");
+    if (error) return void toast.error("Couldn't accept");
     toast.success("Connected · +10 XP");
     qc.invalidateQueries();
   }
   async function remove(id: string, msg: string) {
     const { error } = await supabase.from("connections").delete().eq("id", id);
-    if (error) return toast.error("Something went wrong");
+    if (error) return void toast.error("Something went wrong");
     toast(msg);
     qc.invalidateQueries();
   }

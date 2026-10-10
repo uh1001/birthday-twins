@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyProfile } from "@/hooks/useMyProfile";
-import { fetchCommunityStats, type Profile } from "@/lib/api";
+import { communityIds, fetchCommunityStats, type Profile } from "@/lib/api";
 import { flagFor, formatCount, monthDayLabel } from "@/lib/birthday";
 
 export const Route = createFileRoute("/_authenticated/yearbook")({
@@ -34,10 +34,8 @@ function YearbookPage() {
       const since = `${year}-01-01`;
       const { data, error } = await supabase
         .from("moments")
-        .select("id, body, image_url, created_at, profiles!inner(*), likes(count)")
-        .eq("profiles.birth_month", me!.birth_month!)
-        .eq("profiles.birth_day", me!.birth_day!)
-        .eq("profiles.show_in_yearbook", true)
+        .select("id, body, image_url, created_at, profiles(*), likes(count)")
+        .in("profile_id", await communityIds(me!.birth_month!, me!.birth_day!, { yearbook: true }))
         .gte("created_at", since)
         .order("created_at", { ascending: false })
         .limit(400);
