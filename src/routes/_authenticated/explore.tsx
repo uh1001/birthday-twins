@@ -46,7 +46,7 @@ function ExplorePage() {
             <TabsContent value="people" className="mt-4"><People /></TabsContent>
             <TabsContent value="map" className="mt-4"><MapTab /></TabsContent>
             <TabsContent value="communities" className="mt-4"><Communities /></TabsContent>
-            <TabsContent value="posts" className="mt-4"><PostsTab media={undefined} /></TabsContent>
+            <TabsContent value="posts" className="mt-4"><PostsTab /></TabsContent>
             <TabsContent value="videos" className="mt-4"><PostsTab media="video" /></TabsContent>
           </>
         )}
