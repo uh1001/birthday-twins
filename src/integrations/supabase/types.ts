@@ -840,6 +840,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      viewer_blocked_from: { Args: { target: string }; Returns: boolean }
       year_twin_ids: { Args: never; Returns: string[] }
     }
     Enums: {

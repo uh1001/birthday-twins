@@ -15,6 +15,13 @@
       "when": 1791640708789,
       "tag": "0001_demo_posts_journeys_events",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791641456015,
+      "tag": "0002_fix_profiles_policy_recursion",
+      "breakpoints": true
     }
   ]
 }
