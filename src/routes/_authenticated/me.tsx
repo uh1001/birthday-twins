@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMyProfile } from "@/hooks/useMyProfile";
 import { fetchTwinStats, fetchXpEvents } from "@/lib/api";
 import { ALL_BADGES, earnedBadges, XP_RULES, xpRank } from "@/lib/xp";
+import { deleteMyAccount } from "@/lib/account.functions";
 import type { TablesUpdate } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/_authenticated/me")({
@@ -60,8 +61,11 @@ function MePage() {
 
   async function deleteAccount() {
     if (!me || !window.confirm("Delete your profile, posts, messages and all activity? This can't be undone.")) return;
-    const { error } = await supabase.from("profiles").delete().eq("id", me.id);
-    if (error) return toast.error("Couldn't delete your account");
+    try {
+      await deleteMyAccount();
+    } catch {
+      return toast.error("Couldn't delete your account");
+    }
     toast.success("Your account data was deleted");
     await signOut();
   }
