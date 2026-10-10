@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { flagFor, timeAgo } from "@/lib/birthday";
 import { toast } from "sonner";
 
-export function MomentCard({ moment, me }: { moment: Moment; me?: Profile | null }) {
+export function MomentCard({ moment, me }: { moment: Moment; me?: Profile | null | undefined }) {
   const author = moment.profiles;
   const [liked, setLiked] = useState(false);
 
