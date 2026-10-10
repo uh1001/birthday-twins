@@ -41,7 +41,7 @@ function UserPage() {
       toast("Connection removed");
     } else {
       const { error } = await supabase.from("connections").insert({ follower_id: me.id, following_id: p.id });
-      if (error) return toast.error("Couldn't connect");
+      if (error) { toast.error("Couldn't connect"); return; }
       await awardXp(me, 10);
       await notifySelf(me.id, "connection", `You connected with ${p.first_name}`, "Say hello and ask about their day.", p.id);
       toast.success(`Connected with ${p.first_name} · +10 XP`);

@@ -57,8 +57,8 @@ function Thread() {
     e.preventDefault();
     const body = text.trim();
     if (!me || !body) return;
-    if (body.length > 1000) return toast.error("Message is too long");
-    if (partner.data && !partner.data.allow_messages) return toast.error(`${partner.data.first_name} isn't accepting messages`);
+    if (body.length > 1000) { toast.error("Message is too long"); return; }
+    if (partner.data && !partner.data.allow_messages) { toast.error(`${partner.data.first_name} isn't accepting messages`); return; }
     setText("");
     const { error } = await supabase.from("messages").insert({ sender_id: me.id, recipient_id: id, body });
     if (error) toast.error("Message didn't send");

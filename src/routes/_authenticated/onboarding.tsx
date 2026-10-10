@@ -117,7 +117,7 @@ function Onboarding() {
         birth_day: day,
         birth_year: year ? Number(year) : null,
         show_age: showAge,
-        avatar_url: avatar,
+        avatar_url: avatar ?? null,
         city: parsed.data.city || null,
         country: parsed.data.country || null,
         occupation: parsed.data.occupation || null,
