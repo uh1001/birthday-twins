@@ -181,9 +181,9 @@ function Question({ month, day, canAnswer }: { month: number; day: number; canAn
   async function submit() {
     if (!me || !question.data) return;
     const text = answer.trim();
-    if (!text || text.length > 500) return toast.error("Write 1–500 characters");
+    if (!text || text.length > 500) return void toast.error("Write 1–500 characters");
     const { error } = await supabase.from("answers").insert({ question_id: question.data.id, profile_id: me.id, body: text });
-    if (error) return toast.error(error.message.includes("duplicate") ? "You already answered today" : "Couldn't save answer");
+    if (error) return void toast.error(error.message.includes("duplicate") ? "You already answered today" : "Couldn't save answer");
     setAnswer("");
     toast.success("Answer shared · +20 XP");
     qc.invalidateQueries();
@@ -237,9 +237,9 @@ function Challenges({ month, day }: { month: number; day: number }) {
   async function enter(id: string) {
     if (!me) return;
     const body = (drafts[id] ?? "").trim();
-    if (!body || body.length > 1000) return toast.error("Write 1–1,000 characters");
+    if (!body || body.length > 1000) return void toast.error("Write 1–1,000 characters");
     const { error } = await supabase.from("challenge_entries").insert({ challenge_id: id, profile_id: me.id, body });
-    if (error) return toast.error(error.message.includes("duplicate") ? "You already joined this challenge" : "Couldn't submit");
+    if (error) return void toast.error(error.message.includes("duplicate") ? "You already joined this challenge" : "Couldn't submit");
     toast.success("Challenge joined");
     setDrafts((d) => ({ ...d, [id]: "" }));
     qc.invalidateQueries();
@@ -330,13 +330,13 @@ function Events({ month, day, canCreate }: { month: number; day: number; canCrea
 
   async function create() {
     if (!me) return;
-    if (title.trim().length < 3) return toast.error("Give your event a title");
-    if (!when || new Date(when) < new Date()) return toast.error("Pick a future date and time");
+    if (title.trim().length < 3) return void toast.error("Give your event a title");
+    if (!when || new Date(when) < new Date()) return void toast.error("Pick a future date and time");
     const { error } = await supabase.from("community_events").insert({
       birth_month: month, birth_day: day, title: title.trim(), description: description.trim() || null,
       location: location.trim() || null, starts_at: new Date(when).toISOString(), created_by: me.id,
     });
-    if (error) return toast.error("Couldn't create event");
+    if (error) return void toast.error("Couldn't create event");
     toast.success("Event created — your community has been notified");
     setOpen(false); setTitle(""); setDescription(""); setWhen("");
     qc.invalidateQueries({ queryKey: ["events"] });
@@ -347,14 +347,14 @@ function Events({ month, day, canCreate }: { month: number; day: number; canCrea
     const { error } = going
       ? await supabase.from("event_rsvps").delete().eq("event_id", eventId).eq("profile_id", me.id)
       : await supabase.from("event_rsvps").insert({ event_id: eventId, profile_id: me.id });
-    if (error) return toast.error("Couldn't update RSVP");
+    if (error) return void toast.error("Couldn't update RSVP");
     qc.invalidateQueries({ queryKey: ["events"] });
   }
 
   async function remove(id: string) {
     if (!window.confirm("Cancel this event?")) return;
     const { error } = await supabase.from("community_events").delete().eq("id", id);
-    if (error) return toast.error("Couldn't cancel event");
+    if (error) return void toast.error("Couldn't cancel event");
     qc.invalidateQueries({ queryKey: ["events"] });
   }
 

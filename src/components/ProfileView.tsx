@@ -106,7 +106,7 @@ function Stat({ value, label }: { value: number; label: string }) {
   return <div className="panel p-3"><p className="font-display text-lg font-semibold">{value}</p><p className="text-xs text-muted-foreground">{label}</p></div>;
 }
 
-function ProfileFeed({ profile, me, kind, media, isSelf }: { profile: Profile; me?: Profile | null; kind?: "notJourney"; media?: "video"; isSelf: boolean }) {
+function ProfileFeed({ profile, me, kind, media, isSelf }: { profile: Profile; me?: Profile | null | undefined; kind?: "notJourney" | undefined; media?: "video" | undefined; isSelf: boolean }) {
   const q = useQuery({ queryKey: ["feed", "profile", profile.id, kind, media], queryFn: () => fetchFeed({ profileId: profile.id, kind, media, limit: 50 }, me?.id) });
   return (
     <FeedList

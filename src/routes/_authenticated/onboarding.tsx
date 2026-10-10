@@ -111,7 +111,7 @@ function Onboarding() {
 
   async function onPhoto(f?: File) {
     if (!f) return;
-    if (!f.type.startsWith("image/")) return toast.error("Choose an image file");
+    if (!f.type.startsWith("image/")) return void toast.error("Choose an image file");
     setUploading(true);
     try {
       const up = await uploadMedia(f);

@@ -81,10 +81,10 @@ export function MomentCard({ moment, me, defaultOpenComments = false }: Props) {
 
   async function saveEdit() {
     const text = draft.trim();
-    if (text.length > 2000) return toast.error("Keep it under 2,000 characters");
-    if (!text && !moment.image_url && !moment.video_url) return toast.error("Write something");
+    if (text.length > 2000) return void toast.error("Keep it under 2,000 characters");
+    if (!text && !moment.image_url && !moment.video_url) return void toast.error("Write something");
     const { error } = await supabase.from("moments").update({ body: text, updated_at: new Date().toISOString() }).eq("id", moment.id);
-    if (error) return toast.error("Couldn't save changes");
+    if (error) return void toast.error("Couldn't save changes");
     setBody(text);
     setEditing(false);
     toast.success("Updated");
@@ -93,7 +93,7 @@ export function MomentCard({ moment, me, defaultOpenComments = false }: Props) {
   async function remove() {
     if (!window.confirm("Delete this post?")) return;
     const { error } = await supabase.from("moments").delete().eq("id", moment.id);
-    if (error) return toast.error("Couldn't delete");
+    if (error) return void toast.error("Couldn't delete");
     setDeleted(true);
     toast.success("Deleted");
     qc.invalidateQueries({ queryKey: ["feed"] });
@@ -104,7 +104,7 @@ export function MomentCard({ moment, me, defaultOpenComments = false }: Props) {
     const reason = window.prompt("What's wrong with this post?")?.trim();
     if (!reason) return;
     const { error } = await reportContent({ reporterId: me.id, reportedId: moment.profile_id, reason, momentId: moment.id });
-    if (error) return toast.error("Couldn't send report");
+    if (error) return void toast.error("Couldn't send report");
     toast.success("Thanks — a moderator will review it");
   }
 
@@ -207,7 +207,7 @@ function ActionButton({ onClick, label, children }: { onClick: () => void; label
   );
 }
 
-function Comments({ momentId, me, onCount }: { momentId: string; me?: Profile | null; onCount: (n: number) => void }) {
+function Comments({ momentId, me, onCount }: { momentId: string; me?: Profile | null | undefined; onCount: (n: number) => void }) {
   const [text, setText] = useState("");
   const list = useQuery({ queryKey: ["comments", momentId], queryFn: () => fetchComments(momentId) });
 
@@ -216,9 +216,9 @@ function Comments({ momentId, me, onCount }: { momentId: string; me?: Profile | 
     if (!me) return;
     const body = text.trim();
     if (!body) return;
-    if (body.length > 1000) return toast.error("Keep comments under 1,000 characters");
+    if (body.length > 1000) return void toast.error("Keep comments under 1,000 characters");
     const { error } = await supabase.from("comments").insert({ moment_id: momentId, profile_id: me.id, body });
-    if (error) return toast.error("Couldn't comment");
+    if (error) return void toast.error("Couldn't comment");
     setText("");
     const r = await list.refetch();
     onCount(r.data?.length ?? 0);
@@ -226,7 +226,7 @@ function Comments({ momentId, me, onCount }: { momentId: string; me?: Profile | 
 
   async function remove(id: string) {
     const { error } = await supabase.from("comments").delete().eq("id", id);
-    if (error) return toast.error("Couldn't delete comment");
+    if (error) return void toast.error("Couldn't delete comment");
     const r = await list.refetch();
     onCount(r.data?.length ?? 0);
   }

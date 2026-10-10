@@ -63,7 +63,7 @@ function UserPage() {
     if (!window.confirm(`Block ${p.first_name}? You won't see each other or be able to message.`)) return;
     if (conn.data?.id) await supabase.from("connections").delete().eq("id", conn.data.id);
     const { error } = await supabase.from("blocks").insert({ blocker_id: me.id, blocked_id: p.id });
-    if (error) return toast.error("Couldn't block");
+    if (error) return void toast.error("Couldn't block");
     toast(`${p.first_name} is blocked`);
     qc.invalidateQueries();
     navigate({ to: "/home" });
@@ -74,7 +74,7 @@ function UserPage() {
     const reason = window.prompt("Tell us briefly what's wrong")?.trim();
     if (!reason) return;
     const { error } = await reportContent({ reporterId: me.id, reportedId: p.id, reason });
-    if (error) return toast.error("Couldn't send report");
+    if (error) return void toast.error("Couldn't send report");
     toast.success("Thanks — a moderator will review this");
   }
 

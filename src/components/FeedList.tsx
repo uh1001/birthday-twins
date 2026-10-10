@@ -11,11 +11,11 @@ export function FeedList({
   me,
   empty,
 }: {
-  items?: FeedItem[];
-  isLoading?: boolean;
-  isError?: boolean;
-  me?: Profile | null;
-  empty: { emoji?: string; title: string; description: string; action?: ReactNode };
+  items?: FeedItem[] | undefined;
+  isLoading?: boolean | undefined;
+  isError?: boolean | undefined;
+  me?: Profile | null | undefined;
+  empty: { emoji?: string | undefined; title: string; description: string; action?: ReactNode | undefined };
 }) {
   if (isLoading) return <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-3xl" />)}</div>;
   if (isError) return <EmptyState emoji="⚠️" title="Couldn't load posts" description="Check your connection and try again." />;

@@ -30,15 +30,15 @@ export function Composer({ me, defaultKind = "post", onDone }: { me: Profile; de
   function pick(f: File | undefined) {
     if (!f) return;
     const check = validateMedia(f);
-    if (!check.ok) return toast.error(check.error);
+    if (!check.ok) return void toast.error(check.error);
     setFile(f);
     setPreview(URL.createObjectURL(f));
   }
 
   async function submit() {
     const text = body.trim();
-    if (!text && !file) return toast.error("Write something or add a photo or video");
-    if (text.length > 2000) return toast.error("Keep it under 2,000 characters");
+    if (!text && !file) return void toast.error("Write something or add a photo or video");
+    if (text.length > 2000) return void toast.error("Keep it under 2,000 characters");
     setBusy(true);
     try {
       let image_url: string | null = null;

@@ -1,4 +1,4 @@
-export type Celebrity = { name: string; known_for: string; year?: number; url?: string; image?: string; source: "wikipedia" };
+export type Celebrity = { name: string; known_for: string; year?: number | undefined; url?: string | undefined; image?: string | undefined; source: "wikipedia" };
 
 /**
  * Public figures born on a given month/day, from Wikipedia's "On this day" feed
@@ -17,9 +17,9 @@ export async function fetchCelebrities(month: number, day: number, limit = 12): 
     .sort((a, b) => (b.year ?? 0) - (a.year ?? 0))
     .slice(0, limit)
     .map((b) => {
-      const page = b.pages![0];
+      const page = b.pages![0]!;
       return {
-        name: page.titles?.normalized ?? b.text.split(",")[0],
+        name: page.titles?.normalized ?? b.text.split(",")[0] ?? b.text,
         known_for: page.description ?? b.text,
         year: b.year,
         url: page.content_urls?.desktop?.page,

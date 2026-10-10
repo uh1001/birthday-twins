@@ -122,13 +122,13 @@ async function enrich(rows: RawFeed[], meId?: string): Promise<FeedItem[]> {
 }
 
 export type FeedFilter = {
-  month?: number | null;
-  day?: number | null;
-  profileId?: string;
-  kind?: "moment" | "post" | "journey" | "notJourney";
-  media?: "image" | "video" | "any";
-  search?: string;
-  limit?: number;
+  month?: number | null | undefined;
+  day?: number | null | undefined;
+  profileId?: string | undefined;
+  kind?: "moment" | "post" | "journey" | "notJourney" | undefined;
+  media?: "image" | "video" | "any" | undefined;
+  search?: string | undefined;
+  limit?: number | undefined;
 };
 
 export async function fetchFeed(f: FeedFilter, meId?: string): Promise<FeedItem[]> {
@@ -173,7 +173,7 @@ export async function fetchJourney(profileId: string) {
   if (error) throw error;
   const rows = (data ?? []) as Moment[];
   if (!rows.length) return { day: null as string | null, entries: [] as Moment[] };
-  const day = new Date(rows[0].created_at).toDateString();
+  const day = new Date(rows[0]!.created_at).toDateString();
   return { day, entries: rows.filter((r) => new Date(r.created_at).toDateString() === day).reverse() };
 }
 

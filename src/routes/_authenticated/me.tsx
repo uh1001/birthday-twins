@@ -47,7 +47,7 @@ function MePage() {
   async function update(patch: TablesUpdate<"profiles">) {
     if (!me) return;
     const { error } = await supabase.from("profiles").update(patch).eq("id", me.id);
-    if (error) return toast.error("Couldn't save");
+    if (error) return void toast.error("Couldn't save");
     toast.success("Saved");
     qc.invalidateQueries();
   }
@@ -64,7 +64,7 @@ function MePage() {
     try {
       await deleteMyAccount();
     } catch {
-      return toast.error("Couldn't delete your account");
+      return void toast.error("Couldn't delete your account");
     }
     toast.success("Your account data was deleted");
     await signOut();

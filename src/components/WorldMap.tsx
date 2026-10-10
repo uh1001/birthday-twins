@@ -20,7 +20,7 @@ export function WorldMap({ points, selected, onSelect }: { points: MapPoint[]; s
     fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
       .then((r) => r.json())
       .then((topo: Topology) => {
-        if (alive) setLand(feature(topo, topo.objects.countries) as unknown as FeatureCollection<Geometry>);
+        if (alive) setLand(feature(topo, topo.objects["countries"]!) as unknown as FeatureCollection<Geometry>);
       })
       .catch(() => alive && setFailed(true));
     return () => {
