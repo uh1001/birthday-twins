@@ -4,9 +4,11 @@ A social discovery web app for finding people around the world who share your bi
 
 Birthday Twin is about curiosity and community, not dating. Connections and messaging are optional and controlled by each user.
 
-## 🌐 Live App
+## 🌐 Live Demo
 
-Not published yet. Preview builds are available inside Lovable. This section will link to the live URL once the app is published.
+[Try Birthday Twin](https://twin-birthdays-unite.lovable.app) — https://twin-birthdays-unite.lovable.app
+
+Source code: [github.com/uh1001/birthday-twins](https://github.com/uh1001/birthday-twins)
 
 ## ✨ Implemented Features
 
@@ -28,6 +30,7 @@ Not published yet. Preview builds are available inside Lovable. This section wil
 
 - Ordinary accounts are refused by the database when trying moderator actions, reading reports or the moderation log, or granting themselves roles (tested with a temporary account).
 - The owner moderator account can open the moderation page and create/delete a challenge, with both actions appearing in the log.
+- Full report flow: a temporary account posted, a second ordinary account reported it, the reporter's attempt to remove it was refused, and the moderator account removed it. The post was deleted, the report marked resolved, and a `remove_post` log entry recorded the moderator, time and reason. Test accounts and data were then deleted; the log entry was kept.
 - Posting, likes, comments and XP were exercised in the preview during development.
 - Birthday / leap-year and XP helper unit tests (`src/lib/*.test.ts`).
 
@@ -40,7 +43,6 @@ Other features are implemented but have not each been tested end to end.
 - Map country outlines are loaded from an external public source.
 - Demo users are fake profiles used to show matching; they cannot sign in.
 - Moderators can't yet suspend accounts; there's no appeal flow.
-- Not yet published to a public URL.
 
 ## 🛠️ Tech Stack
 
@@ -56,8 +58,8 @@ Other features are implemented but have not each been tested end to end.
 Requires [Bun](https://bun.sh) (the repo has a `bun.lock`) or Node.js with npm.
 
 ```bash
-git clone https://github.com/uh1001/<repository>.git
-cd <repository>
+git clone https://github.com/uh1001/birthday-twins.git
+cd birthday-twins
 bun install        # or: npm install
 bun run dev        # or: npm run dev
 ```
