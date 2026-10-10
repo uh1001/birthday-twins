@@ -30,8 +30,12 @@ function MePage() {
 
   async function setFlag(key: keyof Pick<Profile, "show_age" | "is_private" | "allow_messages">, value: boolean) {
     if (!me) return;
-    const { error } = await supabase.from("profiles").update({ [key]: value }).eq("id", me.id);
-    if (error) return toast.error("Couldn't save");
+    const update =
+      key === "show_age" ? { show_age: value }
+      : key === "is_private" ? { is_private: value }
+      : { allow_messages: value };
+    const { error } = await supabase.from("profiles").update(update).eq("id", me.id);
+    if (error) { toast.error("Couldn't save"); return; }
     qc.invalidateQueries({ queryKey: ["my-profile"] });
   }
 
@@ -45,7 +49,7 @@ function MePage() {
   async function deleteAccount() {
     if (!me || !window.confirm("Delete your profile, moments and messages? This can't be undone.")) return;
     const { error } = await supabase.from("profiles").delete().eq("id", me.id);
-    if (error) return toast.error("Couldn't delete your account");
+    if (error) { toast.error("Couldn't delete your account"); return; }
     toast.success("Your account data was deleted");
     await signOut();
   }
