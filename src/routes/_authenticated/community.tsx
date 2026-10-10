@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyProfile } from "@/hooks/useMyProfile";
-import { fetchAnswers, fetchCommunityMembers, fetchCommunityStats, fetchFeed, fetchTodaysQuestion } from "@/lib/api";
+import { communityIds, fetchAnswers, fetchCommunityMembers, fetchCommunityStats, fetchFeed, fetchTodaysQuestion } from "@/lib/api";
 import { ageFrom, daysInMonthForBirthday, flagFor, formatCount, MONTHS, monthDayLabel } from "@/lib/birthday";
 import { xpRank } from "@/lib/xp";
 
@@ -228,7 +228,7 @@ function Challenges({ month, day }: { month: number; day: number }) {
       const { data: ch } = await supabase.from("community_challenges").select("*").lte("starts_on", today).gte("ends_on", today).order("ends_on");
       const ids = (ch ?? []).map((c) => c.id);
       const { data: entries } = ids.length
-        ? await supabase.from("challenge_entries").select("*, profiles!inner(*)").in("challenge_id", ids).eq("profiles.birth_month", month).eq("profiles.birth_day", day).order("created_at", { ascending: false }).limit(200)
+        ? await supabase.from("challenge_entries").select("*, profiles(*)").in("challenge_id", ids).in("profile_id", await communityIds(month, day)).order("created_at", { ascending: false }).limit(200)
         : { data: [] };
       return (ch ?? []).map((c) => ({ ...c, entries: (entries ?? []).filter((e) => e.challenge_id === c.id) }));
     },
@@ -270,7 +270,7 @@ function Challenges({ month, day }: { month: number; day: number }) {
             {joined && <p className="mt-3 text-xs font-medium text-primary">✓ You joined this challenge</p>}
             <div className="mt-3 space-y-2">
               {c.entries.slice(0, 3).map((e) => (
-                <p key={e.id} className="rounded-xl bg-surface p-3 text-sm"><span className="font-semibold">{e.profiles.first_name}:</span> {e.body}</p>
+                <p key={e.id} className="rounded-xl bg-surface p-3 text-sm"><span className="font-semibold">{e.profiles?.first_name}:</span> {e.body}</p>
               ))}
             </div>
           </div>
